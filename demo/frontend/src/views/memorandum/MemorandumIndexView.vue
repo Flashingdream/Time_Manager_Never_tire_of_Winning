@@ -13,7 +13,11 @@
 
         <!-- 备忘录列表 -->
         <el-table :data="memoList" style="width: 100%" v-loading="loading">
-          <el-table-column prop="content" label="内容" width="400"></el-table-column>
+          <el-table-column prop="title" label="事件名称" width="150"></el-table-column>
+          <el-table-column prop="content" label="内容" width="300"></el-table-column>
+          <el-table-column prop="location" label="地点" width="150"></el-table-column>
+          <el-table-column prop="startTime" label="开始时间" width="180" :formatter="formatDate"></el-table-column>
+          <el-table-column prop="endTime" label="结束时间" width="180" :formatter="formatDate"></el-table-column>
           <el-table-column prop="createdAt" label="创建时间" width="180" :formatter="formatDate"></el-table-column>
           <el-table-column prop="updatedAt" label="更新时间" width="180" :formatter="formatDate"></el-table-column>
           <el-table-column label="操作" width="150">
@@ -25,14 +29,44 @@
         </el-table>
 
         <!-- 添加/编辑对话框 -->
-        <el-dialog :title="dialogTitle" v-model="showAddDialog" width="500px">
+        <el-dialog :title="dialogTitle" v-model="showAddDialog" width="600px">
           <el-form :model="memoForm" :rules="memoRules" ref="memoFormRef" label-width="100px">
+            <el-form-item label="事件名称" prop="title">
+              <el-input
+                v-model="memoForm.title"
+                placeholder="请输入事件名称"
+              />
+            </el-form-item>
             <el-form-item label="内容" prop="content">
               <el-input
                 v-model="memoForm.content"
                 type="textarea"
                 :rows="4"
                 placeholder="请输入备忘录内容"
+              />
+            </el-form-item>
+            <el-form-item label="地点" prop="location">
+              <el-input
+                v-model="memoForm.location"
+                placeholder="请输入事件地点"
+              />
+            </el-form-item>
+            <el-form-item label="开始时间" prop="startTime">
+              <el-date-picker
+                v-model="memoForm.startTime"
+                type="datetime"
+                placeholder="选择开始时间"
+                format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss"
+              />
+            </el-form-item>
+            <el-form-item label="结束时间" prop="endTime">
+              <el-date-picker
+                v-model="memoForm.endTime"
+                type="datetime"
+                placeholder="选择结束时间"
+                format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss"
               />
             </el-form-item>
           </el-form>
@@ -69,14 +103,25 @@ const currentMemoId = ref(null);
 
 // 表单数据
 const memoForm = ref({
-  content: ''
+  title: '',
+  content: '',
+  location: '',
+  startTime: null,
+  endTime: null
 });
 
 // 表单校验规则
 const memoRules = ref({
+  title: [
+    { required: true, message: '请输入事件名称', trigger: 'blur' },
+    { max: 100, message: '事件名称不能超过100个字', trigger: 'blur' }
+  ],
   content: [
     { required: true, message: '请输入备忘录内容', trigger: 'blur' },
     { max: 500, message: '备忘录内容不能超过500个字', trigger: 'blur' }
+  ],
+  location: [
+    { max: 200, message: '地点不能超过200个字', trigger: 'blur' }
   ]
 });
 
@@ -110,11 +155,19 @@ const submitMemo = async () => {
   }
 
   try {
+    const payload = {
+      title: memoForm.value.title,
+      content: memoForm.value.content,
+      location: memoForm.value.location,
+      startTime: memoForm.value.startTime || null,
+      endTime: memoForm.value.endTime || null
+    };
+
     let res;
     if (isEdit.value) {
-      res = await axios.put(`/memos/${currentMemoId.value}`, { content: memoForm.value.content });
+      res = await axios.put(`/memos/${currentMemoId.value}`, payload);
     } else {
-      res = await axios.post('/memos', { content: memoForm.value.content });
+      res = await axios.post('/memos', payload);
     }
 
     if (res.data.code === 200) {
@@ -135,7 +188,13 @@ const submitMemo = async () => {
 const editMemo = (memo) => {
   isEdit.value = true;
   currentMemoId.value = memo.id;
-  memoForm.value.content = memo.content;
+  memoForm.value = {
+    title: memo.title || '',
+    content: memo.content || '',
+    location: memo.location || '',
+    startTime: memo.startTime || null,
+    endTime: memo.endTime || null
+  };
   dialogTitle.value = '编辑备忘录';
   showAddDialog.value = true;
 };
@@ -167,7 +226,7 @@ const deleteMemo = async (id) => {
 // 重置表单
 const resetForm = () => {
   memoFormRef.value?.resetFields();
-  memoForm.value = { content: '' };
+  memoForm.value = { title: '', content: '', location: '', startTime: null, endTime: null };
   isEdit.value = false;
   currentMemoId.value = null;
   dialogTitle.value = '添加备忘录';

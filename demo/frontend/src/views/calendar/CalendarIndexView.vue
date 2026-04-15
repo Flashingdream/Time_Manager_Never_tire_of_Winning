@@ -6,16 +6,14 @@
       <ContentField>
         <div class="card-content">
           <h5>普通日历列表</h5>
-          <!-- Element Plus 日期选择器（Vue3 版本） -->
-          <el-date-picker
+          <!-- Element Plus 日历组件（总是显示） -->
+          <el-calendar
             v-model="selectedDate"
-            type="date"
-            placeholder="选择日期"
             @change="getDailyEvents"
-            style="margin-bottom: 15px; width: 100%;"
+            style="width: 100%;"
           />
-          <!-- 日历简单展示 -->
-          <div class="calendar-tip">当前选中：{{ selectedDate || '请选择日期' }}</div>
+          <!-- 当前选中日期提示 -->
+          <div class="calendar-tip">当前选中：{{ selectedDate ? selectedDate.toISOString().split('T')[0] : '请选择日期' }}</div>
         </div>
       </ContentField>
 
@@ -95,8 +93,8 @@ const memos = ref([]);
 
 // 页面加载时初始化（替代 created 钩子）
 onMounted(() => {
-  // 设置默认日期为今日（格式：YYYY-MM-DD）
-  selectedDate.value = new Date().toISOString().split('T')[0];
+  // 设置默认日期为今日（Date对象）
+  selectedDate.value = new Date();
   getDailyEvents();
   getMemos();
 });
@@ -107,8 +105,9 @@ onMounted(() => {
 const getDailyEvents = async () => {
   if (!selectedDate.value) return;
   try {
+    const dateStr = selectedDate.value.toISOString().split('T')[0];
     const res = await axios.get('/daily-events', {
-      params: { date: selectedDate.value }
+      params: { date: dateStr }
     });
     dailyEvents.value = res.data.data || [];
   } catch (err) {
@@ -228,5 +227,21 @@ const deleteMemo = async (memoId) => {
 .calendar-tip {
   color: #666;
   font-size: 14px;
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* 日历组件样式调整 */
+:deep(.el-calendar) {
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+}
+:deep(.el-calendar__header) {
+  background-color: #f5f7fa;
+  padding: 10px;
+  border-bottom: 1px solid #ebeef5;
+}
+:deep(.el-calendar__body) {
+  padding: 10px;
 }
 </style>
