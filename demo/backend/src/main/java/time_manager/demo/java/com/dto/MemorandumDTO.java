@@ -3,16 +3,19 @@ package time_manager.demo.java.com.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 
+
 public class MemorandumDTO {
 
     private Long id;
     private String title;
     private String content;
     private String location;
+    private String tag; // 事件标签：生活、娱乐、工作、社交
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startTime;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endTime;
+    private Integer reminderOffset;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -21,15 +24,24 @@ public class MemorandumDTO {
     // Constructors
     public MemorandumDTO() {}
 
-    public MemorandumDTO(Long id, String title, String content, String location, LocalDateTime startTime, LocalDateTime endTime, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public MemorandumDTO(Long id, String title, String content, String location, String tag, LocalDateTime startTime, LocalDateTime endTime, Integer reminderOffset, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.title = title;
         this.content = content;
         this.location = location;
+        this.tag = tag;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.reminderOffset = reminderOffset;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+    }
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 
     // Getters and Setters
@@ -79,6 +91,14 @@ public class MemorandumDTO {
 
     public void setEndTime(LocalDateTime endTime) {
         this.endTime = endTime;
+    }
+
+    public Integer getReminderOffset() {
+        return reminderOffset;
+    }
+
+    public void setReminderOffset(Integer reminderOffset) {
+        this.reminderOffset = reminderOffset;
     }
 
     public LocalDateTime getCreatedAt() {

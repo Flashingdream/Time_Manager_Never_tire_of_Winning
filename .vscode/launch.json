@@ -1,15 +1,35 @@
 {
     "configurations": [
-        
         {
             "type": "java",
             "name": "Spring Boot-DemoApplication<demo>",
             "request": "launch",
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/demo/backend",
             "mainClass": "time_manager.demo.DemoApplication",
             "projectName": "demo",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Vue.js Frontend: serve",
+            "program": "${workspaceFolder}/demo/frontend/node_modules/.bin/vue-cli-service",
+            "args": ["serve"],
+            "cwd": "${workspaceFolder}/demo/frontend",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "preLaunchTask": "install-frontend-deps"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Vue.js Frontend: build",
+            "program": "${workspaceFolder}/demo/frontend/node_modules/.bin/vue-cli-service",
+            "args": ["build"],
+            "cwd": "${workspaceFolder}/demo/frontend",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
         }
     ]
 }

@@ -38,5 +38,18 @@ The application will be available at:
 - Frontend: http://localhost:8080
 - Backend API: http://localhost:8080/api
 
-### Cross-Platform Compatibility
-This project has been updated to run on Windows, Linux, and macOS. Windows-specific batch scripts have been removed to ensure cross-platform compatibility.
+### IntelliJ IDEA Support
+This project can run directly in IntelliJ IDEA:
+
+#### Backend (Spring Boot)
+1. Open the `demo/backend` folder in IDEA
+2. IDEA will automatically detect the Maven project
+3. Right-click on `DemoApplication.java` and select "Run" or "Debug"
+
+#### Frontend (Vue.js)
+1. Ensure Node.js plugin is installed in IDEA
+2. Open the `demo/frontend` folder
+3. Right-click on `package.json` and select "Run 'npm install'"
+4. Then run "Run 'npm run serve'"
+
+For full-stack development, you may need to run frontend and backend separately, or configure IDEA run configurations for both.

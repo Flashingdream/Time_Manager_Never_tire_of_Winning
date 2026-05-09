@@ -36,8 +36,10 @@ public class MemorandumServiceImpl implements MemorandumService {
         memorandum.setTitle(memorandumDTO.getTitle());
         memorandum.setContent(memorandumDTO.getContent());
         memorandum.setLocation(memorandumDTO.getLocation());
+        memorandum.setTag(memorandumDTO.getTag());
         memorandum.setStartTime(memorandumDTO.getStartTime());
         memorandum.setEndTime(memorandumDTO.getEndTime());
+        memorandum.setReminderOffset(memorandumDTO.getReminderOffset() == null ? 5 : memorandumDTO.getReminderOffset());
         memorandum.setCreatedAt(LocalDateTime.now());
         memorandum.setUpdatedAt(LocalDateTime.now());
         Memorandum saved = memorandumRepository.save(memorandum);
@@ -52,8 +54,10 @@ public class MemorandumServiceImpl implements MemorandumService {
             memorandum.setTitle(memorandumDTO.getTitle());
             memorandum.setContent(memorandumDTO.getContent());
             memorandum.setLocation(memorandumDTO.getLocation());
+            memorandum.setTag(memorandumDTO.getTag());
             memorandum.setStartTime(memorandumDTO.getStartTime());
             memorandum.setEndTime(memorandumDTO.getEndTime());
+            memorandum.setReminderOffset(memorandumDTO.getReminderOffset() == null ? 5 : memorandumDTO.getReminderOffset());
             memorandum.setUpdatedAt(LocalDateTime.now());
             Memorandum updated = memorandumRepository.save(memorandum);
             return convertToDTO(updated);
@@ -72,8 +76,10 @@ public class MemorandumServiceImpl implements MemorandumService {
                 memorandum.getTitle(),
                 memorandum.getContent(),
                 memorandum.getLocation(),
+                memorandum.getTag(),
                 memorandum.getStartTime(),
                 memorandum.getEndTime(),
+                memorandum.getReminderOffset(),
                 memorandum.getCreatedAt(),
                 memorandum.getUpdatedAt()
         );

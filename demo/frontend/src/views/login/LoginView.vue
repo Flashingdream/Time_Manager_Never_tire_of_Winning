@@ -1,16 +1,31 @@
 <template>
-  <div class="simple-login-container">
+  <div class="login-container">
     <div class="login-card">
-      <h3>时间管理系统 - 登录</h3>
-      <el-form :model="loginForm" @submit.prevent="handleLogin" label-width="60px">
+      <h3>时间管理系统</h3>
+
+      <!-- 登录/注册 切换 -->
+      <div class="tab-switch">
+        <span :class="{ active: mode === 'login' }" @click="switchMode('login')">登录</span>
+        <span :class="{ active: mode === 'register' }" @click="switchMode('register')">注册</span>
+      </div>
+
+      <el-form :model="form" label-width="60px">
         <el-form-item label="账号">
-          <el-input v-model="loginForm.username" placeholder="请输入账号" />
+          <el-input v-model="form.userId" placeholder="请输入账号" />
         </el-form-item>
         <el-form-item label="密码">
-          <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" />
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" />
         </el-form-item>
+
+        <!-- 注册模式：确认密码 -->
+        <el-form-item v-if="mode === 'register'" label="确认密码">
+          <el-input v-model="confirmPassword" type="password" placeholder="请再次输入密码" />
+        </el-form-item>
+
         <el-form-item>
-          <el-button type="primary" @click="handleLogin" class="login-btn">登录</el-button>
+          <el-button type="primary" class="submit-btn" @click="handleSubmit" :loading="loading">
+            {{ mode === 'login' ? '登录' : '注册' }}
+          </el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -21,33 +36,86 @@
 import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 
 const router = useRouter();
 
-// 1. 登录表单数据
-const loginForm = ref({
-  username: '',
+const mode = ref('login');
+const loading = ref(false);
+const confirmPassword = ref('');
+
+const form = ref({
+  userId: '',
   password: ''
 });
 
-// 2. 极简登录逻辑（本地固定账号密码）
-const handleLogin = () => {
-  // 本地模拟校验：固定账号admin，密码123456
-  if (loginForm.value.username === 'admin' && loginForm.value.password === '123456') {
-    // 存储登录态（本地localStorage）
-    localStorage.setItem('isLogin', 'true'); // 标记已登录
-    localStorage.setItem('username', loginForm.value.username); // 存储用户名
-    ElMessage.success('登录成功！');
-    router.push('/calendar'); // 跳转到日历首页
+const switchMode = (m) => {
+  mode.value = m;
+  form.value.userId = '';
+  form.value.password = '';
+  confirmPassword.value = '';
+};
+
+const handleLogin = async () => {
+  if (!form.value.userId.trim() || !form.value.password.trim()) {
+    ElMessage.warning('请输入账号和密码');
+    return;
+  }
+  try {
+    const res = await axios.post('http://localhost:8080/api/users/login', {
+      userId: form.value.userId.trim(),
+      password: form.value.password
+    });
+    if (res.data.code === 200) {
+      localStorage.setItem('isLogin', 'true');
+      localStorage.setItem('username', res.data.data.userId);
+      localStorage.setItem('role', res.data.data.role);
+      ElMessage.success('登录成功！');
+      router.push('/calendar');
+    } else {
+      ElMessage.error(res.data.msg);
+    }
+  } catch {
+    ElMessage.error('无法连接服务器');
+  }
+};
+
+const handleRegister = async () => {
+  if (!form.value.userId.trim() || !form.value.password.trim()) {
+    ElMessage.warning('请输入账号和密码');
+    return;
+  }
+  if (form.value.password !== confirmPassword.value) {
+    ElMessage.warning('两次密码输入不一致');
+    return;
+  }
+  try {
+    const res = await axios.post('http://localhost:8080/api/users/register', {
+      userId: form.value.userId.trim(),
+      password: form.value.password
+    });
+    if (res.data.code === 200) {
+      ElMessage.success('注册成功，请登录');
+      switchMode('login');
+    } else {
+      ElMessage.error(res.data.msg);
+    }
+  } catch {
+    ElMessage.error('无法连接服务器');
+  }
+};
+
+const handleSubmit = () => {
+  if (mode.value === 'login') {
+    handleLogin();
   } else {
-    ElMessage.error('账号或密码错误（默认：admin/123456）');
+    handleRegister();
   }
 };
 </script>
 
 <style scoped>
-/* 极简样式，保证页面居中即可 */
-.simple-login-container {
+.login-container {
   width: 100%;
   height: 100vh;
   display: flex;
@@ -57,7 +125,7 @@ const handleLogin = () => {
 }
 
 .login-card {
-  width: 350px;
+  width: 380px;
   padding: 30px;
   background: #fff;
   border-radius: 8px;
@@ -70,7 +138,29 @@ const handleLogin = () => {
   color: #333;
 }
 
-.login-btn {
+.tab-switch {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #eee;
+}
+
+.tab-switch span {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
+  cursor: pointer;
+  color: #999;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.tab-switch span.active {
+  color: #409eff;
+  border-bottom: 2px solid #409eff;
+  margin-bottom: -2px;
+}
+
+.submit-btn {
   width: 100%;
 }
 </style>

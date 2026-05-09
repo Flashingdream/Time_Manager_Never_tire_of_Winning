@@ -39,7 +39,7 @@ const routes = [
     path: '/user/information',
     name: 'UserInformation',
     component: UserInformationIndexView,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requireAdmin: true }
   }
 ];
 
@@ -48,20 +48,26 @@ const router = createRouter({
   routes
 });
 
-// 极简路由守卫：仅校验本地登录态
+// 路由守卫：校验本地登录态和管理员权限
 router.beforeEach((to, from, next) => {
-  // 判断页面是否需要登录
   if (to.meta.requiresAuth) {
-    // 读取本地登录标记
     const isLogin = localStorage.getItem('isLogin') === 'true';
-    if (isLogin) {
-      next(); // 已登录，放行
-    } else {
+    if (!isLogin) {
       ElMessage.warning('请先登录！');
-      next('/login'); // 未登录，跳登录页
+      next('/login');
+      return;
     }
+    if (to.meta.requireAdmin) {
+      const role = localStorage.getItem('role');
+      if (role !== 'admin') {
+        ElMessage.warning('无管理员权限');
+        next('/calendar');
+        return;
+      }
+    }
+    next();
   } else {
-    next(); // 无需登录，直接放行
+    next();
   }
 });
 

@@ -6,6 +6,7 @@
       <router-link to="/calendar">日历</router-link>
       <router-link to="/memorandum">添加当日事件</router-link>
       <router-link to="/event">添加备忘录</router-link>
+      <router-link v-if="isAdmin" to="/user/information">用户管理</router-link>
     </div>
 
     <!-- 右侧用户信息 + 退出 -->
@@ -23,19 +24,19 @@ import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const username = ref('');
+const isAdmin = ref(false);
 
-// 页面加载时读取本地存储的用户名
 onMounted(() => {
   username.value = localStorage.getItem('username') || '用户';
+  isAdmin.value = localStorage.getItem('role') === 'admin';
 });
 
-// 极简退出登录
 const logout = () => {
-  // 清除本地登录态
   localStorage.removeItem('isLogin');
   localStorage.removeItem('username');
+  localStorage.removeItem('role');
   ElMessage.success('退出成功！');
-  router.push('/login'); // 跳回登录页
+  router.push('/login');
 };
 </script>
 

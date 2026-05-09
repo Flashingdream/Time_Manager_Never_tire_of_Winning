@@ -17,12 +17,18 @@ public class Memorandum {
     @Column(nullable = false, length = 500)
     private String content;
 
+
     @Column(length = 200)
     private String location; // 事件地点
+
+    @Column(length = 20)
+    private String tag; // 事件标签：生活、娱乐、工作、社交
 
     private LocalDateTime startTime; // 开始时间
 
     private LocalDateTime endTime; // 结束时间
+
+    private Integer reminderOffset; // 提前提醒分钟数，0/5/15/30
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -33,13 +39,23 @@ public class Memorandum {
     // Constructors
     public Memorandum() {}
 
-    public Memorandum(String title, String content, String location, LocalDateTime startTime, LocalDateTime endTime) {
+    public Memorandum(String title, String content, String location, LocalDateTime startTime, LocalDateTime endTime, String tag) {
         this.title = title;
         this.content = content;
         this.location = location;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.tag = tag;
+        this.reminderOffset = 5;
         this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+    public String getTag() {
+        return tag;
+    }
+
+    public void setTag(String tag) {
+        this.tag = tag;
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -94,6 +110,15 @@ public class Memorandum {
 
     public void setEndTime(LocalDateTime endTime) {
         this.endTime = endTime;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public Integer getReminderOffset() {
+        return reminderOffset;
+    }
+
+    public void setReminderOffset(Integer reminderOffset) {
+        this.reminderOffset = reminderOffset;
         this.updatedAt = LocalDateTime.now();
     }
 

@@ -18,6 +18,7 @@
           <el-table-column prop="location" label="地点" width="150"></el-table-column>
           <el-table-column prop="startTime" label="开始时间" width="180" :formatter="formatDate"></el-table-column>
           <el-table-column prop="endTime" label="结束时间" width="180" :formatter="formatDate"></el-table-column>
+          <el-table-column label="提醒时间" width="120" :formatter="formatReminderOffset"></el-table-column>
           <el-table-column prop="createdAt" label="创建时间" width="180" :formatter="formatDate"></el-table-column>
           <el-table-column prop="updatedAt" label="更新时间" width="180" :formatter="formatDate"></el-table-column>
           <el-table-column label="操作" width="150">
@@ -59,6 +60,14 @@
                 format="YYYY-MM-DD HH:mm:ss"
                 value-format="YYYY-MM-DD HH:mm:ss"
               />
+            </el-form-item>
+            <el-form-item label="提醒时间" prop="reminderOffset">
+              <el-select v-model="memoForm.reminderOffset" placeholder="请选择提醒时间">
+                <el-option label="0 分钟前" value="0" />
+                <el-option label="5 分钟前" value="5" />
+                <el-option label="15 分钟前" value="15" />
+                <el-option label="30 分钟前" value="30" />
+              </el-select>
             </el-form-item>
             <el-form-item label="结束时间" prop="endTime">
               <el-date-picker
@@ -107,6 +116,7 @@ const memoForm = ref({
   content: '',
   location: '',
   startTime: null,
+  reminderOffset: 5,
   endTime: null
 });
 
@@ -160,6 +170,7 @@ const submitMemo = async () => {
       content: memoForm.value.content,
       location: memoForm.value.location,
       startTime: memoForm.value.startTime || null,
+      reminderOffset: memoForm.value.reminderOffset,
       endTime: memoForm.value.endTime || null
     };
 
@@ -193,6 +204,7 @@ const editMemo = (memo) => {
     content: memo.content || '',
     location: memo.location || '',
     startTime: memo.startTime || null,
+    reminderOffset: memo.reminderOffset != null ? memo.reminderOffset : 5,
     endTime: memo.endTime || null
   };
   dialogTitle.value = '编辑备忘录';
@@ -226,16 +238,56 @@ const deleteMemo = async (id) => {
 // 重置表单
 const resetForm = () => {
   memoFormRef.value?.resetFields();
-  memoForm.value = { title: '', content: '', location: '', startTime: null, endTime: null };
+  memoForm.value = { title: '', content: '', location: '', startTime: null, reminderOffset: 5, endTime: null };
   isEdit.value = false;
   currentMemoId.value = null;
   dialogTitle.value = '添加备忘录';
 };
 
 // 格式化日期
-const formatDate = (row, column, cellValue) => {
-  if (!cellValue) return '';
-  return new Date(cellValue).toLocaleString();
+
+const formatDate = (row) => {
+  if (!row) return '';
+  // 兼容 el-table formatter 传参，row 为当前行对象
+  // 假设 formatter 用于 startTime、endTime、createdAt、updatedAt 字段
+  // 直接取对应字段值
+  // 这里假设 formatter 绑定在 el-table-column 上，row 为当前行对象
+  // 需要根据实际绑定字段名获取值
+  // 这里以 startTime 为例
+  // 可根据实际情况调整
+  // 由于 formatter 绑定多列，需判断字段
+  // 这里假设 formatter 只用于时间字段
+  // 可根据实际情况调整
+  // 这里只做简单处理
+  // 若 row 为字符串则直接格式化
+  if (typeof row === 'string' || typeof row === 'number') {
+    return new Date(row).toLocaleString();
+  }
+  // 若 row 为对象，尝试取常见时间字段
+  const timeFields = ['startTime', 'endTime', 'createdAt', 'updatedAt'];
+  for (const key of timeFields) {
+    if (row[key]) {
+      return new Date(row[key]).toLocaleString();
+    }
+  }
+  return '';
+};
+
+const formatReminderOffset = (row) => {
+  const offset = row.reminderOffset;
+  if (offset === 0) {
+    return '0 分钟前';
+  }
+  if (offset === 5) {
+    return '5 分钟前';
+  }
+  if (offset === 15) {
+    return '15 分钟前';
+  }
+  if (offset === 30) {
+    return '30 分钟前';
+  }
+  return '默认 5 分钟前';
 };
 
 // 组件挂载时获取数据
