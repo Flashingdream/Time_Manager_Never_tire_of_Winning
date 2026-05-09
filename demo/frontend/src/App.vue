@@ -1,12 +1,12 @@
-<template>  <!--这是单行注释-->
+<template>
+  <!-- 背景图层 -->
+  <div class="bg-overlay"></div>
+
   <NavBar v-if="isLogin" />
-  <router-view ></router-view>
-</template> // 用来写HTML，这里定义了组件的模板部分，使用了 Vue 的插值语法 {{ }} 来显示 bot_name 和 bot_rating 的值。
+  <router-view></router-view>
+</template>
 
-<script>  // 单行注释
-// 这里的 script 标签用来定义组件的逻辑部分，包括数据、方法等。我们使用了 Vue 3 的 Composition API 来定义组件的 setup 函数
-//是用来写js的
-
+<script>
 import NavBar from "@/components/NabBar.vue";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap"
@@ -28,15 +28,42 @@ export default
   },
   mounted() {
     this.isLogin = localStorage.getItem('isLogin') === 'true';
+
+    // 应用自定义背景设置
+    const savedBg = localStorage.getItem('bgImage');
+    const savedOpacity = localStorage.getItem('bgOpacity');
+    const overlay = document.querySelector('.bg-overlay');
+    if (overlay) {
+      if (savedBg) {
+        overlay.style.backgroundImage = `url(${savedBg})`;
+      }
+      const opacity = savedOpacity ? parseInt(savedOpacity) / 100 : 1;
+      overlay.style.opacity = opacity.toString();
+    }
   }
 }
-</script> 
+</script>
 
-// 这里的 style 标签可以用来添加组件的样式,目前是空的，可以根据需要添加 CSS 样式来美化组件的外观。
-<style>     /*单行注释*/
+<style>
+body {
+  background-image: url("@/assets/images/IMG_1637.JPG");
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+}
 
-body{
-  background-image: url("@/assets/images/IMG_1637.JPG");   /* 设置背景图片 */
-  background-size: cover;  /* 设置背景图片覆盖整个页面 */
+/* 背景图层：用于自定义背景 + 透明度 */
+.bg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: -1;
+  pointer-events: none;
 }
 </style>

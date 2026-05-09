@@ -16,15 +16,15 @@ public class MemorandumDTO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endTime;
     private Integer reminderOffset;
+    private Boolean completed;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
 
-    // Constructors
     public MemorandumDTO() {}
 
-    public MemorandumDTO(Long id, String title, String content, String location, String tag, LocalDateTime startTime, LocalDateTime endTime, Integer reminderOffset, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public MemorandumDTO(Long id, String title, String content, String location, String tag, LocalDateTime startTime, LocalDateTime endTime, Integer reminderOffset, Boolean completed, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.title = title;
         this.content = content;
@@ -33,6 +33,7 @@ public class MemorandumDTO {
         this.startTime = startTime;
         this.endTime = endTime;
         this.reminderOffset = reminderOffset;
+        this.completed = completed;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -99,6 +100,14 @@ public class MemorandumDTO {
 
     public void setReminderOffset(Integer reminderOffset) {
         this.reminderOffset = reminderOffset;
+    }
+
+    public Boolean getCompleted() {
+        return completed;
+    }
+
+    public void setCompleted(Boolean completed) {
+        this.completed = completed;
     }
 
     public LocalDateTime getCreatedAt() {

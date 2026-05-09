@@ -4,11 +4,11 @@ import router from './router'
 import store from './store'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import { requestNotificationPermission, connectWebSocket } from './notification.js'
 
-const app = createApp(App).use(store).use(router).use(ElementPlus)
+const app = createApp(App).use(store).use(router).use(ElementPlus, { locale: zhCn })
 
-// 请求通知权限并连接WebSocket
 requestNotificationPermission();
 connectWebSocket();
 

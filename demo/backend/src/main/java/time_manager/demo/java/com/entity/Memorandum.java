@@ -30,6 +30,9 @@ public class Memorandum {
 
     private Integer reminderOffset; // 提前提醒分钟数，0/5/15/30
 
+    @Column(nullable = false)
+    private Boolean completed = false; // 是否已完成
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -120,6 +123,14 @@ public class Memorandum {
     public void setReminderOffset(Integer reminderOffset) {
         this.reminderOffset = reminderOffset;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public Boolean getCompleted() {
+        return completed;
+    }
+
+    public void setCompleted(Boolean completed) {
+        this.completed = completed;
     }
 
     public LocalDateTime getCreatedAt() {

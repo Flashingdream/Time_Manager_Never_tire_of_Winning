@@ -14,4 +14,8 @@ public interface MemorandumService {
     MemorandumDTO updateMemorandum(Long id, MemorandumDTO memorandumDTO);
 
     void deleteMemorandum(Long id);
+
+    List<MemorandumDTO> searchMemorandums(String keyword);
+
+    MemorandumDTO toggleComplete(Long id);
 }

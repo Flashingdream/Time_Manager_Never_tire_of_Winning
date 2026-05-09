@@ -4,7 +4,8 @@ import CalendarIndexView from '@/views/calendar/CalendarIndexView.vue';
 import MemorandumIndexView from '@/views/memorandum/MemorandumIndexView.vue';
 import EventIndexView from '@/views/event/EventIndexView.vue';
 import UserInformationIndexView from '@/views/user/information/UserInformationIndexView.vue';
-import LoginView from '@/views/login/LoginView.vue'; 
+import FocusView from '@/views/focus/FocusView.vue';
+import LoginView from '@/views/login/LoginView.vue';
 import { ElMessage } from 'element-plus';
 
 const routes = [
@@ -33,6 +34,12 @@ const routes = [
     path: '/event',
     name: 'Event',
     component: EventIndexView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/focus',
+    name: 'Focus',
+    component: FocusView,
     meta: { requiresAuth: true }
   },
   {

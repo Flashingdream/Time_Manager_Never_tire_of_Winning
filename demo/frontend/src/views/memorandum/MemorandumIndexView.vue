@@ -1,332 +1,416 @@
 <template>
-  <div class="memo-container">
-    <!-- 复用公共卡片组件，保持风格统一 -->
+  <div class="overview-container">
+    <!-- 今日时间轴 -->
     <ContentField>
-      <div class="memo-content">
-        <!-- 页面标题 -->
-        <h3 class="page-title">备忘录管理</h3>
+      <div class="overview-content">
+        <h3 class="page-title">事件总览</h3>
 
-        <!-- 添加备忘录按钮 -->
-        <div class="add-btn-container">
-          <el-button type="primary" @click="showAddDialog = true">添加备忘录</el-button>
+        <div class="today-header">
+          <span class="today-label">今日</span>
+          <span class="today-date">{{ todayStr }}</span>
         </div>
 
-        <!-- 备忘录列表 -->
-        <el-table :data="memoList" style="width: 100%" v-loading="loading">
-          <el-table-column prop="title" label="事件名称" width="150"></el-table-column>
-          <el-table-column prop="content" label="内容" width="300"></el-table-column>
-          <el-table-column prop="location" label="地点" width="150"></el-table-column>
-          <el-table-column prop="startTime" label="开始时间" width="180" :formatter="formatDate"></el-table-column>
-          <el-table-column prop="endTime" label="结束时间" width="180" :formatter="formatDate"></el-table-column>
-          <el-table-column label="提醒时间" width="120" :formatter="formatReminderOffset"></el-table-column>
-          <el-table-column prop="createdAt" label="创建时间" width="180" :formatter="formatDate"></el-table-column>
-          <el-table-column prop="updatedAt" label="更新时间" width="180" :formatter="formatDate"></el-table-column>
-          <el-table-column label="操作" width="150">
-            <template #default="scope">
-              <el-button size="mini" @click="editMemo(scope.row)">编辑</el-button>
-              <el-button size="mini" type="danger" @click="deleteMemo(scope.row.id)">删除</el-button>
+        <!-- 今日时间轴 -->
+        <div v-if="todayEvents.length === 0" class="empty-today">
+          <el-icon><Sunny /></el-icon>
+          <p>今天没有特别规划</p>
+        </div>
+        <div v-else class="timeline">
+          <div v-for="event in todayEvents" :key="event.id" class="timeline-item">
+            <div class="timeline-dot" :class="tagClass(event.tag)"></div>
+            <div class="timeline-card">
+              <div class="tl-top">
+                <span class="tl-time">{{ fmtTime(event.startTime) }} — {{ fmtTime(event.endTime) || '未定' }}</span>
+                <span :class="['tag-badge', tagClass(event.tag)]">{{ event.tag || '未分类' }}</span>
+              </div>
+              <div class="tl-body">
+                <span v-if="event.title" class="tl-title">{{ event.title }}</span>
+                <span class="tl-content">{{ event.content }}</span>
+              </div>
+              <div class="tl-bottom" v-if="event.location">
+                <el-icon><Location /></el-icon>
+                <span>{{ event.location }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ContentField>
+
+    <!-- 全部事件列表 -->
+    <ContentField>
+      <div class="overview-content">
+        <div class="toolbar">
+          <div class="search-bar">
+            <el-icon class="search-icon"><Search /></el-icon>
+            <input v-model="searchKeyword" placeholder="搜索事件..." class="search-input" @input="onSearch" />
+          </div>
+          <el-button type="primary" class="add-btn" @click="openAddDialog">
+            <el-icon><Plus /></el-icon>添加事件
+          </el-button>
+        </div>
+
+        <el-table :data="memoList" style="width: 100%" v-loading="loading" class="memo-table" :row-class-name="rowClass">
+          <el-table-column prop="title" label="事件名称" width="140" />
+          <el-table-column prop="content" label="内容" min-width="200" show-overflow-tooltip />
+          <el-table-column label="标签" width="110">
+            <template #default="{ row }">
+              <el-popover placement="bottom" :width="200" trigger="click">
+                <template #reference>
+                  <span :class="['tag-badge', 'tag-clickable', tagClass(row.tag)]">{{ row.tag || '未分类' }}</span>
+                </template>
+                <div class="tag-picker">
+                  <span v-for="t in tags" :key="t" :class="['tag-option', tagClass(t)]" @click="changeTag(row, t)">{{ t }}</span>
+                </div>
+              </el-popover>
+            </template>
+          </el-table-column>
+          <el-table-column prop="location" label="地点" width="110" />
+          <el-table-column prop="startTime" label="开始时间" width="150" :formatter="fmt" />
+          <el-table-column prop="endTime" label="结束时间" width="150" :formatter="fmt" />
+          <el-table-column label="提醒" width="100">
+            <template #default="{ row }">
+              <el-popover placement="bottom" :width="160" trigger="click">
+                <template #reference>
+                  <span class="reminder-cell">{{ fmtReminder(row) }}</span>
+                </template>
+                <div class="reminder-picker">
+                  <span v-for="r in reminderOptions" :key="r.value" :class="['reminder-option', { active: row.reminderOffset === r.value }]" @click="changeReminder(row, r.value)">{{ r.label }}</span>
+                </div>
+              </el-popover>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createdAt" label="创建时间" width="150" :formatter="fmt" />
+          <el-table-column label="操作" width="170" fixed="right">
+            <template #default="{ row }">
+              <el-button size="small" class="action-btn done" @click="toggleComplete(row)">
+                <el-icon><Check /></el-icon>
+              </el-button>
+              <el-button size="small" class="action-btn" @click="editMemo(row)">
+                <el-icon><Edit /></el-icon>
+              </el-button>
+              <el-button size="small" class="action-btn danger" @click="deleteMemo(row.id)">
+                <el-icon><Delete /></el-icon>
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
-
-        <!-- 添加/编辑对话框 -->
-        <el-dialog :title="dialogTitle" v-model="showAddDialog" width="600px">
-          <el-form :model="memoForm" :rules="memoRules" ref="memoFormRef" label-width="100px">
-            <el-form-item label="事件名称" prop="title">
-              <el-input
-                v-model="memoForm.title"
-                placeholder="请输入事件名称"
-              />
-            </el-form-item>
-            <el-form-item label="内容" prop="content">
-              <el-input
-                v-model="memoForm.content"
-                type="textarea"
-                :rows="4"
-                placeholder="请输入备忘录内容"
-              />
-            </el-form-item>
-            <el-form-item label="地点" prop="location">
-              <el-input
-                v-model="memoForm.location"
-                placeholder="请输入事件地点"
-              />
-            </el-form-item>
-            <el-form-item label="开始时间" prop="startTime">
-              <el-date-picker
-                v-model="memoForm.startTime"
-                type="datetime"
-                placeholder="选择开始时间"
-                format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss"
-              />
-            </el-form-item>
-            <el-form-item label="提醒时间" prop="reminderOffset">
-              <el-select v-model="memoForm.reminderOffset" placeholder="请选择提醒时间">
-                <el-option label="0 分钟前" value="0" />
-                <el-option label="5 分钟前" value="5" />
-                <el-option label="15 分钟前" value="15" />
-                <el-option label="30 分钟前" value="30" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="结束时间" prop="endTime">
-              <el-date-picker
-                v-model="memoForm.endTime"
-                type="datetime"
-                placeholder="选择结束时间"
-                format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss"
-              />
-            </el-form-item>
-          </el-form>
-          <template #footer>
-            <span class="dialog-footer">
-              <el-button @click="showAddDialog = false">取消</el-button>
-              <el-button type="primary" @click="submitMemo">确定</el-button>
-            </span>
-          </template>
-        </el-dialog>
       </div>
     </ContentField>
+
+    <!-- 添加/编辑对话框 -->
+    <el-dialog :title="dialogTitle" v-model="showDialog" width="620px" class="memo-dialog">
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+        <el-form-item label="事件名称" prop="title">
+          <el-input v-model="form.title" placeholder="请输入事件名称" />
+        </el-form-item>
+        <el-form-item label="内容" prop="content">
+          <el-input v-model="form.content" type="textarea" :rows="3" placeholder="请输入内容" />
+        </el-form-item>
+        <el-form-item label="标签" prop="tag">
+          <el-select v-model="form.tag" placeholder="选择标签" style="width: 100%;">
+            <el-option v-for="t in tags" :key="t" :label="t" :value="t" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="地点" prop="location">
+          <el-input v-model="form.location" placeholder="请输入地点" />
+        </el-form-item>
+        <el-form-item label="开始时间" prop="startTime">
+          <el-date-picker v-model="form.startTime" type="datetime" placeholder="选择开始时间"
+            format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" />
+        </el-form-item>
+        <el-form-item label="提醒时间" prop="reminderOffset">
+          <el-select v-model="form.reminderOffset" placeholder="选择提醒时间">
+            <el-option v-for="r in reminderOptions" :key="r.value" :label="r.label" :value="r.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="结束时间" prop="endTime">
+          <el-date-picker v-model="form.endTime" type="datetime" placeholder="选择结束时间"
+            format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button class="dialog-btn" @click="showDialog = false">取消</el-button>
+        <el-button type="primary" class="dialog-btn" @click="submitMemo">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-// Vue3 组合式API核心依赖
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { Search, Plus, Edit, Delete, Check, Sunny, Location } from '@element-plus/icons-vue';
 import axios from 'axios';
-// 复用公共卡片组件
 import ContentField from '@/components/ContentField.vue';
 
-// axios基础路径
 axios.defaults.baseURL = 'http://localhost:8080/api';
 
-// 响应式数据
+const tags = ['生活', '学习', '工作', '娱乐', '社交'];
+const reminderOptions = [
+  { label: '准时', value: 0 },
+  { label: '5 分钟前', value: 5 },
+  { label: '15 分钟前', value: 15 },
+  { label: '30 分钟前', value: 30 },
+];
+
 const memoList = ref([]);
 const loading = ref(false);
-const showAddDialog = ref(false);
-const dialogTitle = ref('添加备忘录');
+const showDialog = ref(false);
+const dialogTitle = ref('添加事件');
 const isEdit = ref(false);
-const currentMemoId = ref(null);
+const currentId = ref(null);
+const searchKeyword = ref('');
 
-// 表单数据
-const memoForm = ref({
-  title: '',
-  content: '',
-  location: '',
-  startTime: null,
-  reminderOffset: 5,
-  endTime: null
+const form = ref({
+  title: '', content: '', tag: '生活', location: '',
+  startTime: null, reminderOffset: 15, endTime: null
 });
 
-// 表单校验规则
-const memoRules = ref({
-  title: [
-    { required: true, message: '请输入事件名称', trigger: 'blur' },
-    { max: 100, message: '事件名称不能超过100个字', trigger: 'blur' }
-  ],
-  content: [
-    { required: true, message: '请输入备忘录内容', trigger: 'blur' },
-    { max: 500, message: '备忘录内容不能超过500个字', trigger: 'blur' }
-  ],
-  location: [
-    { max: 200, message: '地点不能超过200个字', trigger: 'blur' }
-  ]
+const rules = ref({
+  title: [{ required: true, message: '请输入事件名称', trigger: 'blur' }, { max: 100, message: '不超过100字', trigger: 'blur' }],
+  content: [{ required: true, message: '请输入内容', trigger: 'blur' }, { max: 500, message: '不超过500字', trigger: 'blur' }],
+  location: [{ max: 200, message: '不超过200字', trigger: 'blur' }]
 });
 
-// 表单引用
-const memoFormRef = ref(null);
+const formRef = ref(null);
 
-// 获取备忘录列表
+const todayStr = computed(() => {
+  const d = new Date();
+  const weekNames = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+  return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + weekNames[d.getDay()];
+});
+
+const todayKey = computed(() => {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+});
+
+const todayEvents = computed(() => {
+  return memoList.value.filter(m => {
+    if (!m.startTime) return false;
+    try {
+      const t = new Date(m.startTime);
+      const key = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+      return key === todayKey.value;
+    } catch { return false; }
+  }).sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+});
+
+const fmtTime = (t) => {
+  if (!t) return '';
+  try { const d = new Date(t); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+  catch { return ''; }
+};
+
+const tagClass = (tag) => {
+  const map = { '生活': 'tag-life', '学习': 'tag-study', '工作': 'tag-work', '娱乐': 'tag-fun', '社交': 'tag-social' };
+  return map[tag] || 'tag-default';
+};
+
+const fmt = (row) => {
+  const val = row?.startTime || row?.endTime || row?.createdAt || row?.updatedAt;
+  return val ? new Date(val).toLocaleString() : '';
+};
+
+const fmtReminder = (row) => {
+  const v = row.reminderOffset;
+  return v === 0 ? '准时' : v + ' 分钟前';
+};
+
+let searchTimer = null;
+const onSearch = () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    searchKeyword.value.trim() ? searchMemos() : fetchMemos();
+  }, 300);
+};
+
 const fetchMemos = async () => {
   loading.value = true;
   try {
     const res = await axios.get('/memos');
-    if (res.data.code === 200) {
-      memoList.value = res.data.data;
-    } else {
-      ElMessage.error(res.data.msg || '获取备忘录失败');
-    }
-  } catch (err) {
-    console.error('获取备忘录失败：', err);
-    ElMessage.error('网络异常，请稍后重试');
-  } finally {
-    loading.value = false;
-  }
+    if (res.data.code === 200) memoList.value = res.data.data || [];
+  } catch { ElMessage.error('获取失败'); }
+  finally { loading.value = false; }
 };
 
-// 提交备忘录（添加或编辑）
-const submitMemo = async () => {
+const searchMemos = async () => {
+  loading.value = true;
   try {
-    await memoFormRef.value.validate();
-  } catch (error) {
-    return;
-  }
-
-  try {
-    const payload = {
-      title: memoForm.value.title,
-      content: memoForm.value.content,
-      location: memoForm.value.location,
-      startTime: memoForm.value.startTime || null,
-      reminderOffset: memoForm.value.reminderOffset,
-      endTime: memoForm.value.endTime || null
-    };
-
-    let res;
-    if (isEdit.value) {
-      res = await axios.put(`/memos/${currentMemoId.value}`, payload);
-    } else {
-      res = await axios.post('/memos', payload);
-    }
-
-    if (res.data.code === 200) {
-      ElMessage.success(isEdit.value ? '更新成功' : '添加成功');
-      showAddDialog.value = false;
-      resetForm();
-      fetchMemos(); // 刷新列表
-    } else {
-      ElMessage.error(res.data.msg || '操作失败');
-    }
-  } catch (err) {
-    console.error('操作失败：', err);
-    ElMessage.error('网络异常，请稍后重试');
-  }
+    const res = await axios.get('/memos/search', { params: { keyword: searchKeyword.value.trim() } });
+    if (res.data.code === 200) memoList.value = res.data.data || [];
+  } catch { ElMessage.error('搜索失败'); }
+  finally { loading.value = false; }
 };
 
-// 编辑备忘录
-const editMemo = (memo) => {
-  isEdit.value = true;
-  currentMemoId.value = memo.id;
-  memoForm.value = {
-    title: memo.title || '',
-    content: memo.content || '',
-    location: memo.location || '',
-    startTime: memo.startTime || null,
-    reminderOffset: memo.reminderOffset != null ? memo.reminderOffset : 5,
-    endTime: memo.endTime || null
-  };
-  dialogTitle.value = '编辑备忘录';
-  showAddDialog.value = true;
-};
-
-// 删除备忘录
-const deleteMemo = async (id) => {
-  try {
-    await ElMessageBox.confirm('确定删除此备忘录吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    });
-
-    const res = await axios.delete(`/memos/${id}`);
-    if (res.data.code === 200) {
-      ElMessage.success('删除成功');
-      fetchMemos(); // 刷新列表
-    } else {
-      ElMessage.error(res.data.msg || '删除失败');
-    }
-  } catch (err) {
-    if (err !== 'cancel') {
-      console.error('删除失败：', err);
-      ElMessage.error('网络异常，请稍后重试');
-    }
-  }
-};
-
-// 重置表单
-const resetForm = () => {
-  memoFormRef.value?.resetFields();
-  memoForm.value = { title: '', content: '', location: '', startTime: null, reminderOffset: 5, endTime: null };
-  isEdit.value = false;
-  currentMemoId.value = null;
-  dialogTitle.value = '添加备忘录';
-};
-
-// 格式化日期
-
-const formatDate = (row) => {
-  if (!row) return '';
-  // 兼容 el-table formatter 传参，row 为当前行对象
-  // 假设 formatter 用于 startTime、endTime、createdAt、updatedAt 字段
-  // 直接取对应字段值
-  // 这里假设 formatter 绑定在 el-table-column 上，row 为当前行对象
-  // 需要根据实际绑定字段名获取值
-  // 这里以 startTime 为例
-  // 可根据实际情况调整
-  // 由于 formatter 绑定多列，需判断字段
-  // 这里假设 formatter 只用于时间字段
-  // 可根据实际情况调整
-  // 这里只做简单处理
-  // 若 row 为字符串则直接格式化
-  if (typeof row === 'string' || typeof row === 'number') {
-    return new Date(row).toLocaleString();
-  }
-  // 若 row 为对象，尝试取常见时间字段
-  const timeFields = ['startTime', 'endTime', 'createdAt', 'updatedAt'];
-  for (const key of timeFields) {
-    if (row[key]) {
-      return new Date(row[key]).toLocaleString();
-    }
+const rowClass = ({ row }) => {
+  if (row.completed) return 'row-done';
+  if (row.endTime) {
+    try { if (new Date(row.endTime) < new Date()) return 'row-done'; } catch { /* skip */ }
   }
   return '';
 };
 
-const formatReminderOffset = (row) => {
-  const offset = row.reminderOffset;
-  if (offset === 0) {
-    return '0 分钟前';
-  }
-  if (offset === 5) {
-    return '5 分钟前';
-  }
-  if (offset === 15) {
-    return '15 分钟前';
-  }
-  if (offset === 30) {
-    return '30 分钟前';
-  }
-  return '默认 5 分钟前';
+const toggleComplete = async (row) => {
+  try {
+    const res = await axios.put(`/memos/${row.id}/toggle-complete`);
+    if (res.data.code === 200) {
+      row.completed = res.data.data.completed;
+    }
+  } catch { ElMessage.error('操作失败'); }
 };
 
-// 组件挂载时获取数据
-onMounted(() => {
-  fetchMemos();
-});
+const changeTag = async (row, newTag) => {
+  try {
+    const payload = { ...row, tag: newTag, startTime: row.startTime || null, endTime: row.endTime || null };
+    await axios.put(`/memos/${row.id}`, payload);
+    row.tag = newTag;
+    ElMessage.success('标签已更新');
+  } catch { ElMessage.error('更新失败'); }
+};
+
+const changeReminder = async (row, newOffset) => {
+  try {
+    const payload = { ...row, reminderOffset: newOffset, startTime: row.startTime || null, endTime: row.endTime || null };
+    await axios.put(`/memos/${row.id}`, payload);
+    row.reminderOffset = newOffset;
+    ElMessage.success('提醒已更新');
+  } catch { ElMessage.error('更新失败'); }
+};
+
+const openAddDialog = () => {
+  isEdit.value = false; currentId.value = null;
+  dialogTitle.value = '添加事件';
+  form.value = { title: '', content: '', tag: '生活', location: '', startTime: null, reminderOffset: 15, endTime: null };
+  showDialog.value = true;
+};
+
+const editMemo = (memo) => {
+  isEdit.value = true; currentId.value = memo.id;
+  dialogTitle.value = '编辑事件';
+  form.value = {
+    title: memo.title || '', content: memo.content || '', tag: memo.tag || '生活',
+    location: memo.location || '', startTime: memo.startTime || null,
+    reminderOffset: memo.reminderOffset ?? 15, endTime: memo.endTime || null
+  };
+  showDialog.value = true;
+};
+
+const submitMemo = async () => {
+  try { await formRef.value.validate(); } catch { return; }
+  const payload = { ...form.value, startTime: form.value.startTime || null, endTime: form.value.endTime || null };
+  try {
+    const res = isEdit.value
+      ? await axios.put(`/memos/${currentId.value}`, payload)
+      : await axios.post('/memos', payload);
+    if (res.data.code === 200) {
+      ElMessage.success(isEdit.value ? '更新成功' : '添加成功');
+      showDialog.value = false;
+      fetchMemos();
+    }
+  } catch { ElMessage.error('操作失败'); }
+};
+
+const deleteMemo = async (id) => {
+  try {
+    await ElMessageBox.confirm('确定删除此事件吗？', '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' });
+    await axios.delete(`/memos/${id}`);
+    ElMessage.success('删除成功');
+    fetchMemos();
+  } catch (err) { if (err !== 'cancel') ElMessage.error('删除失败'); }
+};
+
+onMounted(() => fetchMemos());
 </script>
 
 <style scoped>
-/* 页面容器：居中+适配高度 */
-.memo-container {
-  width: 100%;
-  max-width: 1000px; /* 限制最大宽度 */
-  margin: 20px auto; /* 水平居中 */
-  padding: 0 15px;
-  box-sizing: border-box;
-}
+.overview-container { width: 100%; max-width: 1100px; margin: 16px auto; padding: 0 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; }
 
-/* 表单内容区域 */
-.memo-content {
-  padding: 20px;
-}
+.overview-content { padding: 20px; }
+.page-title { text-align: center; margin-bottom: 18px; color: #333; font-weight: 600; }
 
-/* 页面标题 */
-.page-title {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
-  font-weight: 600;
-}
+/* 今日头部 */
+.today-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.today-label { font-size: 22px; font-weight: 700; color: #333; }
+.today-date { font-size: 14px; color: #888; }
 
-/* 添加按钮容器 */
-.add-btn-container {
-  margin-bottom: 20px;
-  text-align: left;
-}
+/* 空状态 */
+.empty-today { text-align: center; padding: 36px 0; color: #bbb; }
+.empty-today .el-icon { font-size: 42px; margin-bottom: 10px; color: #ffc107; }
+.empty-today p { font-size: 15px; color: #999; margin: 0; }
 
-/* 对话框样式 */
-.dialog-footer {
-  text-align: right;
-}
+/* 时间轴 */
+.timeline { position: relative; padding-left: 24px; }
+.timeline::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: rgba(0,0,0,0.06); border-radius: 1px; }
+.timeline-item { position: relative; margin-bottom: 16px; display: flex; gap: 14px; }
+.timeline-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; position: absolute; left: -30px; border: 2px solid #fff; box-shadow: 0 0 0 2px currentColor; }
+.timeline-dot.tag-life   { background: #66bb6a; color: #66bb6a; }
+.timeline-dot.tag-study  { background: #42a5f5; color: #42a5f5; }
+.timeline-dot.tag-work   { background: #ff9800; color: #ff9800; }
+.timeline-dot.tag-fun    { background: #ef5350; color: #ef5350; }
+.timeline-dot.tag-social { background: #ab47bc; color: #ab47bc; }
+.timeline-dot.tag-default{ background: #bdbdbd; color: #bdbdbd; }
+
+.timeline-card { flex: 1; background: rgba(255,255,255,0.6); border-radius: 12px; padding: 12px 15px; transition: background 0.2s, box-shadow 0.2s; }
+.timeline-card:hover { background: rgba(255,255,255,0.8); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.tl-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.tl-time { font-size: 13px; color: #666; font-weight: 500; }
+.tl-body { display: flex; flex-direction: column; gap: 3px; }
+.tl-title { font-size: 15px; font-weight: 600; color: #333; }
+.tl-content { font-size: 13px; color: #555; line-height: 1.4; }
+.tl-bottom { display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 12px; color: #999; }
+
+/* 工具栏 */
+.toolbar { display: flex; gap: 14px; margin-bottom: 20px; align-items: center; }
+.search-bar { display: flex; align-items: center; flex: 1; height: 40px; border-radius: 20px; background: rgba(241,243,244,0.7); padding: 0 16px; transition: background 0.2s, box-shadow 0.2s; }
+.search-bar:focus-within { background: rgba(255,255,255,0.85); box-shadow: 0 1px 6px rgba(32,33,36,0.18); }
+.search-icon { color: #999; margin-right: 8px; flex-shrink: 0; }
+.search-input { flex: 1; border: none; outline: none; background: transparent; font-size: 14px; color: #333; }
+.search-input::placeholder { color: #999; }
+.add-btn { border-radius: 20px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+/* 标签 */
+.tag-badge { display: inline-block; padding: 3px 12px; border-radius: 10px; font-size: 12px; font-weight: 500; }
+.tag-clickable { cursor: pointer; transition: transform 0.15s; }
+.tag-clickable:hover { transform: scale(1.08); }
+.tag-life   { background: #e8f5e9; color: #2e7d32; }
+.tag-study  { background: #e3f2fd; color: #1565c0; }
+.tag-work   { background: #fff3e0; color: #e65100; }
+.tag-fun    { background: #fce4ec; color: #c62828; }
+.tag-social { background: #f3e5f5; color: #7b1fa2; }
+.tag-default{ background: #f5f5f5; color: #888; }
+.tag-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag-option { padding: 4px 14px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: transform 0.15s; }
+.tag-option:hover { transform: scale(1.06); }
+
+/* 提醒 */
+.reminder-cell { padding: 2px 10px; border-radius: 8px; font-size: 12px; color: #555; background: rgba(0,0,0,0.03); cursor: pointer; transition: background 0.2s; }
+.reminder-cell:hover { background: rgba(0,0,0,0.07); }
+.reminder-picker { display: flex; flex-direction: column; gap: 4px; }
+.reminder-option { padding: 6px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; transition: background 0.15s; }
+.reminder-option:hover { background: #f0f4ff; }
+.reminder-option.active { background: #e8f0fe; color: #1a73e8; font-weight: 500; }
+
+.action-btn { border-radius: 8px; width: 34px; height: 34px; padding: 0; }
+.action-btn.danger { color: #f56c6c; }
+.action-btn.done { color: #67c23a; }
+
+/* 已完成/过期行 */
+:deep(.row-done) { background: rgba(180,180,180,0.25); }
+:deep(.row-done td) { color: #999; }
+:deep(.row-done .cell) { text-decoration: line-through; }
+
+.dialog-btn { border-radius: 10px; }
+
+:deep(.el-button) { border-radius: 10px; transition: all 0.2s; }
+:deep(.el-button:hover) { transform: translateY(-1px); }
+:deep(.el-button:active) { transform: scale(0.97); }
+:deep(.el-table) { border-radius: 12px; overflow: hidden; background: rgba(255,255,255,0.5); }
+:deep(.el-table th) { background: rgba(245,247,250,0.6); }
+:deep(.el-dialog) { border-radius: 16px; }
+:deep(.el-select .el-input__wrapper) { border-radius: 10px; }
+:deep(.el-input__wrapper) { border-radius: 10px; }
+:deep(.el-textarea__inner) { border-radius: 10px; }
+:deep(.el-date-editor.el-input) { border-radius: 10px; }
 </style>

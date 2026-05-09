@@ -39,7 +39,7 @@ public class MemorandumServiceImpl implements MemorandumService {
         memorandum.setTag(memorandumDTO.getTag());
         memorandum.setStartTime(memorandumDTO.getStartTime());
         memorandum.setEndTime(memorandumDTO.getEndTime());
-        memorandum.setReminderOffset(memorandumDTO.getReminderOffset() == null ? 5 : memorandumDTO.getReminderOffset());
+        memorandum.setReminderOffset(memorandumDTO.getReminderOffset() == null ? 15 : memorandumDTO.getReminderOffset());
         memorandum.setCreatedAt(LocalDateTime.now());
         memorandum.setUpdatedAt(LocalDateTime.now());
         Memorandum saved = memorandumRepository.save(memorandum);
@@ -57,7 +57,7 @@ public class MemorandumServiceImpl implements MemorandumService {
             memorandum.setTag(memorandumDTO.getTag());
             memorandum.setStartTime(memorandumDTO.getStartTime());
             memorandum.setEndTime(memorandumDTO.getEndTime());
-            memorandum.setReminderOffset(memorandumDTO.getReminderOffset() == null ? 5 : memorandumDTO.getReminderOffset());
+            memorandum.setReminderOffset(memorandumDTO.getReminderOffset() == null ? 15 : memorandumDTO.getReminderOffset());
             memorandum.setUpdatedAt(LocalDateTime.now());
             Memorandum updated = memorandumRepository.save(memorandum);
             return convertToDTO(updated);
@@ -70,6 +70,25 @@ public class MemorandumServiceImpl implements MemorandumService {
         memorandumRepository.deleteById(id);
     }
 
+    @Override
+    public List<MemorandumDTO> searchMemorandums(String keyword) {
+        return memorandumRepository.searchByKeyword(keyword).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public MemorandumDTO toggleComplete(Long id) {
+        Optional<Memorandum> existing = memorandumRepository.findById(id);
+        if (existing.isPresent()) {
+            Memorandum m = existing.get();
+            m.setCompleted(!Boolean.TRUE.equals(m.getCompleted()));
+            m.setUpdatedAt(LocalDateTime.now());
+            return convertToDTO(memorandumRepository.save(m));
+        }
+        return null;
+    }
+
     private MemorandumDTO convertToDTO(Memorandum memorandum) {
         return new MemorandumDTO(
                 memorandum.getId(),
@@ -80,6 +99,7 @@ public class MemorandumServiceImpl implements MemorandumService {
                 memorandum.getStartTime(),
                 memorandum.getEndTime(),
                 memorandum.getReminderOffset(),
+                memorandum.getCompleted(),
                 memorandum.getCreatedAt(),
                 memorandum.getUpdatedAt()
         );
