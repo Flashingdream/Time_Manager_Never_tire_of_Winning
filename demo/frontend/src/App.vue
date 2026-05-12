@@ -4,17 +4,20 @@
 
   <NavBar v-if="isLogin" />
   <router-view></router-view>
+  <ReminderOverlay />
 </template>
 
 <script>
 import NavBar from "@/components/NabBar.vue";
+import ReminderOverlay from "@/components/ReminderOverlay.vue";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap"
 
 export default
 {
   components: {
-    NavBar
+    NavBar,
+    ReminderOverlay
   },
   data() {
     return {

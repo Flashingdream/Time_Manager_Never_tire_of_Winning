@@ -35,7 +35,6 @@ import { ElMessage } from 'element-plus';
 import axios from 'axios';
 import ContentField from '@/components/ContentField.vue';
 
-axios.defaults.baseURL = 'http://localhost:8080/api';
 
 const form = ref({ content: '', tag: '生活' });
 
@@ -51,7 +50,7 @@ const formRef = ref(null);
 const submitMemo = async () => {
   try { await formRef.value.validate(); } catch { return; }
   try {
-    const res = await axios.post('/memos', {
+    const res = await axios.post('/api/memos', {
       content: form.value.content,
       tag: form.value.tag
     });

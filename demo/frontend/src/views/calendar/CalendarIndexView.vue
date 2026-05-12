@@ -63,9 +63,11 @@
                   </el-popover>
                   <span class="memo-time" v-if="memo.createdAt">{{ memo.createdAt }}</span>
                 </div>
-                <el-button class="memo-done-btn" @click="toggleComplete(memo)">
-                  <el-icon><Check /></el-icon>
-                </el-button>
+                <el-checkbox
+                  class="memo-checkbox"
+                  :model-value="memo.completed"
+                  @change="toggleComplete(memo)"
+                />
                 <el-button class="memo-del-btn" @click="deleteMemo(memo.id)">
                   <el-icon><Delete /></el-icon>
                 </el-button>
@@ -92,11 +94,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Search, Delete, Plus, Check } from '@element-plus/icons-vue';
+import { Search, Delete, Plus } from '@element-plus/icons-vue';
 import ContentField from '@/components/ContentField.vue';
 import axios from 'axios';
 
-axios.defaults.baseURL = 'http://localhost:8080/api';
 
 const tags = ['生活', '学习', '工作', '娱乐', '社交'];
 const reminderOptions = [
@@ -223,21 +224,21 @@ const onWheel = (e) => {
 
 const fetchMemos = async () => {
   try {
-    const res = await axios.get('/memos');
+    const res = await axios.get('/api/memos');
     if (res.data.code === 200) memos.value = res.data.data || [];
   } catch { /* offline */ }
 };
 
 const fetchSearchResults = async () => {
   try {
-    const res = await axios.get('/memos/search', { params: { keyword: searchKeyword.value.trim() } });
+    const res = await axios.get('/api/memos/search', { params: { keyword: searchKeyword.value.trim() } });
     if (res.data.code === 200) memos.value = res.data.data || [];
   } catch { /* offline */ }
 };
 
 const changeTag = async (memo, newTag) => {
   try {
-    await axios.put(`/memos/${memo.id}`, { ...memo, tag: newTag, startTime: memo.startTime || null, endTime: memo.endTime || null });
+    await axios.put(`/api/memos/${memo.id}`, { ...memo, tag: newTag, startTime: memo.startTime || null, endTime: memo.endTime || null });
     memo.tag = newTag;
     ElMessage.success('标签已更新');
   } catch { ElMessage.error('更新失败'); }
@@ -245,7 +246,7 @@ const changeTag = async (memo, newTag) => {
 
 const changeReminder = async (memo, newOffset) => {
   try {
-    await axios.put(`/memos/${memo.id}`, { ...memo, reminderOffset: newOffset, startTime: memo.startTime || null, endTime: memo.endTime || null });
+    await axios.put(`/api/memos/${memo.id}`, { ...memo, reminderOffset: newOffset, startTime: memo.startTime || null, endTime: memo.endTime || null });
     memo.reminderOffset = newOffset;
     ElMessage.success('提醒已更新');
   } catch { ElMessage.error('更新失败'); }
@@ -261,7 +262,7 @@ const isCompletedOrExpired = (memo) => {
 
 const toggleComplete = async (memo) => {
   try {
-    const res = await axios.put(`/memos/${memo.id}/toggle-complete`);
+    const res = await axios.put(`/api/memos/${memo.id}/toggle-complete`);
     if (res.data.code === 200) {
       memo.completed = res.data.data.completed;
     }
@@ -271,7 +272,7 @@ const toggleComplete = async (memo) => {
 const deleteMemo = async (id) => {
   if (!id) return;
   try {
-    await axios.delete(`/memos/${id}`);
+    await axios.delete(`/api/memos/${id}`);
     memos.value = memos.value.filter(m => m.id !== id);
     ElMessage.success('删除成功');
   } catch { ElMessage.error('删除失败'); }
@@ -280,7 +281,7 @@ const deleteMemo = async (id) => {
 const quickAddMemo = async () => {
   if (!quickContent.value.trim()) return;
   try {
-    const res = await axios.post('/memos', { content: quickContent.value.trim(), tag: quickTag.value });
+    const res = await axios.post('/api/memos', { content: quickContent.value.trim(), tag: quickTag.value });
     if (res.data.code === 200) {
       memos.value.unshift(res.data.data);
       quickContent.value = '';
@@ -341,9 +342,8 @@ onMounted(() => fetchMemos());
 .memo-title-tag { font-size: 11px; color: #888; }
 .memo-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .memo-time { font-size: 11px; color: #aaa; white-space: nowrap; }
-.memo-done-btn { flex-shrink: 0; opacity: 0; transition: opacity 0.2s; border-radius: 8px; width: 28px; height: 28px; padding: 0; color: #67c23a; }
+.memo-checkbox { flex-shrink: 0; }
 .memo-del-btn { flex-shrink: 0; opacity: 0; transition: opacity 0.2s; border-radius: 8px; width: 28px; height: 28px; padding: 0; }
-.memo-item:hover .memo-done-btn,
 .memo-item:hover .memo-del-btn { opacity: 1; }
 
 /* 已完成/过期 */

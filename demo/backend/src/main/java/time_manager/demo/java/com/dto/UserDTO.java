@@ -8,15 +8,17 @@ public class UserDTO {
     private Long id;
     private String userId;
     private String role;
+    private Boolean banned;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
     public UserDTO() {}
 
-    public UserDTO(Long id, String userId, String role, LocalDateTime createdAt) {
+    public UserDTO(Long id, String userId, String role, Boolean banned, LocalDateTime createdAt) {
         this.id = id;
         this.userId = userId;
         this.role = role;
+        this.banned = banned;
         this.createdAt = createdAt;
     }
 
@@ -42,6 +44,14 @@ public class UserDTO {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public Boolean getBanned() {
+        return banned;
+    }
+
+    public void setBanned(Boolean banned) {
+        this.banned = banned;
     }
 
     public LocalDateTime getCreatedAt() {

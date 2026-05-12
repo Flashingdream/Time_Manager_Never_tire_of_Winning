@@ -5,6 +5,7 @@ import time_manager.demo.java.com.entity.User;
 import time_manager.demo.java.com.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
@@ -19,11 +20,22 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
 
     @PostConstruct
+    @Transactional
     public void initAdmin() {
-        if (!userRepository.existsByUserId("admin")) {
+        Optional<User> existing = userRepository.findByUserId("admin");
+        if (existing.isPresent()) {
+            User admin = existing.get();
+            // 修复旧数据：若 password 为空则写入 123456
+            if (admin.getPassword() == null || admin.getPassword().isEmpty()) {
+                admin.setPassword("123456");
+                userRepository.save(admin);
+                userRepository.flush();
+            }
+        } else {
             User admin = new User("admin", "123456", "admin");
             admin.setCreatedAt(LocalDateTime.now());
             userRepository.save(admin);
+            userRepository.flush();
         }
     }
 
@@ -41,8 +53,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO loginUser(String userId, String password) {
         Optional<User> existing = userRepository.findByUserId(userId);
-        if (existing.isPresent() && existing.get().getPassword().equals(password)) {
-            return convertToDTO(existing.get());
+        if (existing.isPresent()) {
+            User user = existing.get();
+            if (Boolean.TRUE.equals(user.getBanned())) {
+                return null; // 被封禁，不能登录
+            }
+            if (user.getPassword().equals(password)) {
+                return convertToDTO(user);
+            }
         }
         return null;
     }
@@ -60,11 +78,30 @@ public class UserServiceImpl implements UserService {
         return user.map(this::convertToDTO).orElse(null);
     }
 
+    @Override
+    public List<UserDTO> searchUsers(String keyword) {
+        return userRepository.findByUserIdContaining(keyword).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public UserDTO banUser(String userId, boolean banned) {
+        Optional<User> existing = userRepository.findByUserId(userId);
+        if (existing.isPresent()) {
+            User user = existing.get();
+            user.setBanned(banned);
+            return convertToDTO(userRepository.save(user));
+        }
+        return null;
+    }
+
     private UserDTO convertToDTO(User user) {
         return new UserDTO(
                 user.getId(),
                 user.getUserId(),
                 user.getRole(),
+                user.getBanned(),
                 user.getCreatedAt()
         );
     }

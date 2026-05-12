@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class MemorandumDTO {
 
     private Long id;
+    private String userId;
     private String title;
     private String content;
     private String location;
@@ -24,8 +25,9 @@ public class MemorandumDTO {
 
     public MemorandumDTO() {}
 
-    public MemorandumDTO(Long id, String title, String content, String location, String tag, LocalDateTime startTime, LocalDateTime endTime, Integer reminderOffset, Boolean completed, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public MemorandumDTO(Long id, String userId, String title, String content, String location, String tag, LocalDateTime startTime, LocalDateTime endTime, Integer reminderOffset, Boolean completed, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
+        this.userId = userId;
         this.title = title;
         this.content = content;
         this.location = location;
@@ -52,6 +54,14 @@ public class MemorandumDTO {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getTitle() {

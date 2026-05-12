@@ -18,21 +18,25 @@ public class MemorandumServiceImpl implements MemorandumService {
     private MemorandumRepository memorandumRepository;
 
     @Override
-    public List<MemorandumDTO> getAllMemorandums() {
-        return memorandumRepository.findAll().stream()
+    public List<MemorandumDTO> getAllMemorandums(String userId) {
+        return memorandumRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public MemorandumDTO getMemorandumById(Long id) {
+    public MemorandumDTO getMemorandumById(Long id, String userId) {
         Optional<Memorandum> memorandum = memorandumRepository.findById(id);
-        return memorandum.map(this::convertToDTO).orElse(null);
+        if (memorandum.isPresent() && memorandum.get().getUserId().equals(userId)) {
+            return convertToDTO(memorandum.get());
+        }
+        return null;
     }
 
     @Override
     public MemorandumDTO createMemorandum(MemorandumDTO memorandumDTO) {
         Memorandum memorandum = new Memorandum();
+        memorandum.setUserId(memorandumDTO.getUserId());
         memorandum.setTitle(memorandumDTO.getTitle());
         memorandum.setContent(memorandumDTO.getContent());
         memorandum.setLocation(memorandumDTO.getLocation());
@@ -71,8 +75,8 @@ public class MemorandumServiceImpl implements MemorandumService {
     }
 
     @Override
-    public List<MemorandumDTO> searchMemorandums(String keyword) {
-        return memorandumRepository.searchByKeyword(keyword).stream()
+    public List<MemorandumDTO> searchMemorandums(String userId, String keyword) {
+        return memorandumRepository.searchByKeyword(userId, keyword).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -92,6 +96,7 @@ public class MemorandumServiceImpl implements MemorandumService {
     private MemorandumDTO convertToDTO(Memorandum memorandum) {
         return new MemorandumDTO(
                 memorandum.getId(),
+                memorandum.getUserId(),
                 memorandum.getTitle(),
                 memorandum.getContent(),
                 memorandum.getLocation(),

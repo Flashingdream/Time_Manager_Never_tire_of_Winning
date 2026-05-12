@@ -34,8 +34,15 @@ public class ReminderService {
             int offset = memo.getReminderOffset() == null ? 5 : memo.getReminderOffset();
             LocalDateTime expectedReminderTime = memo.getStartTime().minusMinutes(offset).truncatedTo(ChronoUnit.MINUTES);
             if (expectedReminderTime.isEqual(now)) {
-                String message = "提醒: " + memo.getTitle() + " 将在 " + memo.getStartTime() + " 开始 (提前 " + offset + " 分钟)";
-                messagingTemplate.convertAndSend("/topic/reminders", message);
+                String json = String.format(
+                    "{\"title\":\"%s\",\"content\":\"%s\",\"tag\":\"%s\",\"startTime\":\"%s\",\"location\":\"%s\"}",
+                    memo.getTitle() != null ? memo.getTitle().replace("\"", "'") : "",
+                    memo.getContent() != null ? memo.getContent().replace("\"", "'") : "",
+                    memo.getTag() != null ? memo.getTag() : "",
+                    memo.getStartTime() != null ? memo.getStartTime().toString().replace("T", " ") : "",
+                    memo.getLocation() != null ? memo.getLocation().replace("\"", "'") : ""
+                );
+                messagingTemplate.convertAndSend("/topic/reminders", json);
             }
         }
     }

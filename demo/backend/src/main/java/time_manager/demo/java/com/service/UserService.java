@@ -12,4 +12,8 @@ public interface UserService {
     List<UserDTO> getAllUsers();
 
     UserDTO getUserByUserId(String userId);
+
+    List<UserDTO> searchUsers(String keyword);
+
+    UserDTO banUser(String userId, boolean banned);
 }

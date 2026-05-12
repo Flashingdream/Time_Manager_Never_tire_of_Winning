@@ -20,6 +20,9 @@ public class User {
     @Column(nullable = false, length = 20)
     private String role; // "admin" 或 "user"
 
+    @Column(nullable = false)
+    private Boolean banned = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -29,6 +32,7 @@ public class User {
         this.userId = userId;
         this.password = password;
         this.role = role;
+        this.banned = false;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -62,6 +66,14 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public Boolean getBanned() {
+        return banned;
+    }
+
+    public void setBanned(Boolean banned) {
+        this.banned = banned;
     }
 
     public LocalDateTime getCreatedAt() {

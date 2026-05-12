@@ -42,12 +42,6 @@ export function requestNotificationPermission() {
 }
 
 export function showNotification(message) {
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification('事件提醒', {
-      body: message,
-      icon: '/favicon.ico' // 可以替换为合适的图标
-    });
-  } else {
-    alert(message); // 如果不支持或未授权，使用alert作为后备
-  }
+  // 分发自定义事件给 ReminderOverlay 组件处理
+  window.dispatchEvent(new CustomEvent('reminder', { detail: message }));
 }

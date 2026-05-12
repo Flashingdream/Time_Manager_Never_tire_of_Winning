@@ -5,9 +5,9 @@ import java.util.List;
 
 public interface MemorandumService {
 
-    List<MemorandumDTO> getAllMemorandums();
+    List<MemorandumDTO> getAllMemorandums(String userId);
 
-    MemorandumDTO getMemorandumById(Long id);
+    MemorandumDTO getMemorandumById(Long id, String userId);
 
     MemorandumDTO createMemorandum(MemorandumDTO memorandumDTO);
 
@@ -15,7 +15,7 @@ public interface MemorandumService {
 
     void deleteMemorandum(Long id);
 
-    List<MemorandumDTO> searchMemorandums(String keyword);
+    List<MemorandumDTO> searchMemorandums(String userId, String keyword);
 
     MemorandumDTO toggleComplete(Long id);
 }

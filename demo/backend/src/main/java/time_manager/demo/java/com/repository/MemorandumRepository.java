@@ -13,6 +13,8 @@ public interface MemorandumRepository extends JpaRepository<Memorandum, Long> {
     @Query("SELECT m FROM Memorandum m WHERE m.startTime BETWEEN :start AND :end")
     List<Memorandum> findByStartTimeBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query("SELECT m FROM Memorandum m WHERE LOWER(m.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(m.content) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    List<Memorandum> searchByKeyword(@Param("keyword") String keyword);
+    @Query("SELECT m FROM Memorandum m WHERE m.userId = :userId AND (LOWER(m.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(m.content) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    List<Memorandum> searchByKeyword(@Param("userId") String userId, @Param("keyword") String keyword);
+
+    List<Memorandum> findByUserIdOrderByCreatedAtDesc(String userId);
 }

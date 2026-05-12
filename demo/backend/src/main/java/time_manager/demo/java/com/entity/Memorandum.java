@@ -11,6 +11,9 @@ public class Memorandum {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "user_id", nullable = false, length = 50)
+    private String userId; // 所属用户
+
     @Column(nullable = false, length = 100)
     private String title; // 事件名称
 
@@ -69,6 +72,14 @@ public class Memorandum {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getTitle() {

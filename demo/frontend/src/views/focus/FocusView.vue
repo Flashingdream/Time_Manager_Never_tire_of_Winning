@@ -143,7 +143,7 @@ const loadData = () => {
 
 const fetchRanking = async () => {
   try {
-    const res = await axios.get('http://localhost:8080/api/focus/ranking', {
+    const res = await axios.get('/api/focus/ranking', {
       params: { yearMonth: thisMonthKey.value }
     });
     if (res.data.code === 200) ranking.value = res.data.data || [];
@@ -204,7 +204,7 @@ const exitFocus = () => {
 
     // 同步到后端
     const username = localStorage.getItem('username') || 'anonymous';
-    axios.post('http://localhost:8080/api/focus/save', {
+    axios.post('/api/focus/save', {
       userId: username,
       yearMonth: key,
       minutes: elapsedMin

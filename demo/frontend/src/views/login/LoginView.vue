@@ -3,7 +3,6 @@
     <div class="login-card">
       <h3>时间管理系统</h3>
 
-      <!-- 登录/注册 切换 -->
       <div class="tab-switch">
         <span :class="{ active: mode === 'login' }" @click="switchMode('login')">登录</span>
         <span :class="{ active: mode === 'register' }" @click="switchMode('register')">注册</span>
@@ -17,14 +16,17 @@
           <el-input v-model="form.password" type="password" placeholder="请输入密码" />
         </el-form-item>
 
-        <!-- 注册模式：确认密码 -->
+        <el-form-item v-if="mode === 'login'">
+          <el-checkbox v-model="isAdminLogin" label="管理员登录" size="small" />
+        </el-form-item>
+
         <el-form-item v-if="mode === 'register'" label="确认密码">
           <el-input v-model="confirmPassword" type="password" placeholder="请再次输入密码" />
         </el-form-item>
 
         <el-form-item>
           <el-button type="primary" class="submit-btn" @click="handleSubmit" :loading="loading">
-            {{ mode === 'login' ? '登录' : '注册' }}
+            {{ submitLabel }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -33,7 +35,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
@@ -43,10 +45,16 @@ const router = useRouter();
 const mode = ref('login');
 const loading = ref(false);
 const confirmPassword = ref('');
+const isAdminLogin = ref(false);
 
 const form = ref({
   userId: '',
   password: ''
+});
+
+const submitLabel = computed(() => {
+  if (mode.value === 'register') return '注册';
+  return isAdminLogin.value ? '管理员登录' : '登录';
 });
 
 const switchMode = (m) => {
@@ -54,6 +62,7 @@ const switchMode = (m) => {
   form.value.userId = '';
   form.value.password = '';
   confirmPassword.value = '';
+  isAdminLogin.value = false;
 };
 
 const handleLogin = async () => {
@@ -61,22 +70,30 @@ const handleLogin = async () => {
     ElMessage.warning('请输入账号和密码');
     return;
   }
+  loading.value = true;
   try {
-    const res = await axios.post('http://localhost:8080/api/users/login', {
+    const loginPath = isAdminLogin.value ? '/api/admin/login' : '/api/user/login';
+    const res = await axios.post(loginPath, {
       userId: form.value.userId.trim(),
-      password: form.value.password
+      password: form.value.password.trim()
     });
     if (res.data.code === 200) {
+      const token = res.data.data.admin_token || res.data.data.token;
+      const user = res.data.data.user;
+      localStorage.setItem('token', token);
       localStorage.setItem('isLogin', 'true');
-      localStorage.setItem('username', res.data.data.userId);
-      localStorage.setItem('role', res.data.data.role);
-      ElMessage.success('登录成功！');
+      localStorage.setItem('username', user.userId);
+      localStorage.setItem('role', user.role);
+      ElMessage.success(isAdminLogin.value ? '管理员登录成功！' : '登录成功！');
       router.push('/calendar');
     } else {
       ElMessage.error(res.data.msg);
     }
-  } catch {
-    ElMessage.error('无法连接服务器');
+  } catch (err) {
+    const msg = err.response?.data?.msg;
+    ElMessage.error(msg || '无法连接服务器，请确认后端已启动');
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -85,23 +102,33 @@ const handleRegister = async () => {
     ElMessage.warning('请输入账号和密码');
     return;
   }
-  if (form.value.password !== confirmPassword.value) {
+  if (form.value.password.trim() !== confirmPassword.value) {
     ElMessage.warning('两次密码输入不一致');
     return;
   }
+  loading.value = true;
   try {
-    const res = await axios.post('http://localhost:8080/api/users/register', {
+    const res = await axios.post('/api/user/register', {
       userId: form.value.userId.trim(),
-      password: form.value.password
+      password: form.value.password.trim()
     });
     if (res.data.code === 200) {
-      ElMessage.success('注册成功，请登录');
-      switchMode('login');
+      const token = res.data.data.token;
+      const user = res.data.data.user;
+      localStorage.setItem('token', token);
+      localStorage.setItem('isLogin', 'true');
+      localStorage.setItem('username', user.userId);
+      localStorage.setItem('role', user.role);
+      ElMessage.success('注册成功！');
+      router.push('/calendar');
     } else {
       ElMessage.error(res.data.msg);
     }
-  } catch {
-    ElMessage.error('无法连接服务器');
+  } catch (err) {
+    const msg = err.response?.data?.msg;
+    ElMessage.error(msg || '无法连接服务器，请确认后端已启动');
+  } finally {
+    loading.value = false;
   }
 };
 

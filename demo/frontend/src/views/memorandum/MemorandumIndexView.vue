@@ -81,11 +81,13 @@
             </template>
           </el-table-column>
           <el-table-column prop="createdAt" label="创建时间" width="150" :formatter="fmt" />
-          <el-table-column label="操作" width="170" fixed="right">
+          <el-table-column label="完成" width="70" fixed="right">
             <template #default="{ row }">
-              <el-button size="small" class="action-btn done" @click="toggleComplete(row)">
-                <el-icon><Check /></el-icon>
-              </el-button>
+              <el-checkbox :model-value="row.completed" @change="toggleComplete(row)" />
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="100" fixed="right">
+            <template #default="{ row }">
               <el-button size="small" class="action-btn" @click="editMemo(row)">
                 <el-icon><Edit /></el-icon>
               </el-button>
@@ -140,11 +142,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Search, Plus, Edit, Delete, Check, Sunny, Location } from '@element-plus/icons-vue';
+import { Search, Plus, Edit, Delete, Sunny, Location } from '@element-plus/icons-vue';
 import axios from 'axios';
 import ContentField from '@/components/ContentField.vue';
 
-axios.defaults.baseURL = 'http://localhost:8080/api';
 
 const tags = ['生活', '学习', '工作', '娱乐', '社交'];
 const reminderOptions = [
@@ -229,7 +230,7 @@ const onSearch = () => {
 const fetchMemos = async () => {
   loading.value = true;
   try {
-    const res = await axios.get('/memos');
+    const res = await axios.get('/api/memos');
     if (res.data.code === 200) memoList.value = res.data.data || [];
   } catch { ElMessage.error('获取失败'); }
   finally { loading.value = false; }
@@ -238,7 +239,7 @@ const fetchMemos = async () => {
 const searchMemos = async () => {
   loading.value = true;
   try {
-    const res = await axios.get('/memos/search', { params: { keyword: searchKeyword.value.trim() } });
+    const res = await axios.get('/api/memos/search', { params: { keyword: searchKeyword.value.trim() } });
     if (res.data.code === 200) memoList.value = res.data.data || [];
   } catch { ElMessage.error('搜索失败'); }
   finally { loading.value = false; }
@@ -264,7 +265,7 @@ const toggleComplete = async (row) => {
 const changeTag = async (row, newTag) => {
   try {
     const payload = { ...row, tag: newTag, startTime: row.startTime || null, endTime: row.endTime || null };
-    await axios.put(`/memos/${row.id}`, payload);
+    await axios.put(`/api/memos/${row.id}`, payload);
     row.tag = newTag;
     ElMessage.success('标签已更新');
   } catch { ElMessage.error('更新失败'); }
@@ -273,7 +274,7 @@ const changeTag = async (row, newTag) => {
 const changeReminder = async (row, newOffset) => {
   try {
     const payload = { ...row, reminderOffset: newOffset, startTime: row.startTime || null, endTime: row.endTime || null };
-    await axios.put(`/memos/${row.id}`, payload);
+    await axios.put(`/api/memos/${row.id}`, payload);
     row.reminderOffset = newOffset;
     ElMessage.success('提醒已更新');
   } catch { ElMessage.error('更新失败'); }
@@ -302,8 +303,8 @@ const submitMemo = async () => {
   const payload = { ...form.value, startTime: form.value.startTime || null, endTime: form.value.endTime || null };
   try {
     const res = isEdit.value
-      ? await axios.put(`/memos/${currentId.value}`, payload)
-      : await axios.post('/memos', payload);
+      ? await axios.put(`/api/memos/${currentId.value}`, payload)
+      : await axios.post('/api/memos', payload);
     if (res.data.code === 200) {
       ElMessage.success(isEdit.value ? '更新成功' : '添加成功');
       showDialog.value = false;
@@ -315,7 +316,7 @@ const submitMemo = async () => {
 const deleteMemo = async (id) => {
   try {
     await ElMessageBox.confirm('确定删除此事件吗？', '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' });
-    await axios.delete(`/memos/${id}`);
+    await axios.delete(`/api/memos/${id}`);
     ElMessage.success('删除成功');
     fetchMemos();
   } catch (err) { if (err !== 'cancel') ElMessage.error('删除失败'); }
@@ -394,7 +395,6 @@ onMounted(() => fetchMemos());
 
 .action-btn { border-radius: 8px; width: 34px; height: 34px; padding: 0; }
 .action-btn.danger { color: #f56c6c; }
-.action-btn.done { color: #67c23a; }
 
 /* 已完成/过期行 */
 :deep(.row-done) { background: rgba(180,180,180,0.25); }

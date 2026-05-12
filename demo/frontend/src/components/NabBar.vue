@@ -167,7 +167,7 @@ onMounted(() => {
 
 const fetchExamCountdown = async () => {
   try {
-    const res = await axios.get('http://localhost:8080/api/memos');
+    const res = await axios.get('/api/memos');
     if (res.data.code === 200) {
       const memos = res.data.data || [];
       const now = new Date();
@@ -191,6 +191,7 @@ const fetchExamCountdown = async () => {
 };
 
 const logout = () => {
+  localStorage.removeItem('token');
   localStorage.removeItem('isLogin');
   localStorage.removeItem('username');
   localStorage.removeItem('role');
